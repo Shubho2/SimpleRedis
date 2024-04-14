@@ -5,7 +5,7 @@ const server = net.createServer((connection) => {
       console.log(data.toString());
       connection.write("+PONG\r\n");
     });
-
+    console.log("Client connected");
   });
 
 
