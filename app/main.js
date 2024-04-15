@@ -61,5 +61,8 @@ const server = net.createServer((connection) => {
     console.log("Client connected");
 });
 
-
-server.listen(6379, "127.0.0.1");
+if(process.argv[2] == "--port") {
+    server.listen(process.argv[3], "127.0.0.1");
+} else {
+    server.listen(6379, "127.0.0.1");
+}
