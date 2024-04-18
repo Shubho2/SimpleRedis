@@ -54,7 +54,11 @@ const server = net.createServer((connection) => {
             case "info":
                 console.log("Info command");
                 if(args[0] === "replication") {
-                    response = formatter.formatBulkString("role:master");
+                    if(isMaster) {
+                        response = formatter.formatBulkString("role:master");
+                    } else {
+                        response = formatter.formatBulkString("role:slave");
+                    }
                 }
                 break;
             default:
@@ -65,6 +69,8 @@ const server = net.createServer((connection) => {
     });
     console.log("Client connected");
 });
+
+const isMaster = !process.argv.includes('--replicaof');
 
 if(process.argv[2] == "--port") {
     server.listen(process.argv[3], "127.0.0.1");
