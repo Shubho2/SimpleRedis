@@ -1,6 +1,5 @@
 const net = require("net");
 const formatter = require("./formatter");
-const { time } = require("console");
 
 let map = new Map();
 
@@ -51,6 +50,12 @@ const server = net.createServer((connection) => {
                 console.log("Get command");
                 let val = map.get(args[0]);
                 response = formatter.formatBulkString(val);
+                break;
+            case "info":
+                console.log("Info command");
+                if(args[0] === "replication") {
+                    response = formatter.formatBulkString("role:master");
+                }
                 break;
             default:
                 console.log("Command not found");
