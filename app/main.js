@@ -55,7 +55,9 @@ const server = net.createServer((connection) => {
                 console.log("Info command");
                 if(args[0] === "replication") {
                     if(isMaster) {
-                        response = formatter.formatBulkString("role:master");
+                        response = formatter.formatBulkString("role:master\r\n" +
+                        "master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb\r\n" +
+                        "master_repl_offset:0\r\n");
                     } else {
                         response = formatter.formatBulkString("role:slave");
                     }

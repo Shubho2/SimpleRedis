@@ -11,6 +11,14 @@ function formatBulkString(string) {
     return `$${string.length}\r\n${string}\r\n`;
 }
 
+function formatArrays(arr) {
+    let response = `*${arr.length}\r\n`;
+    for(let i = 0; i < arr.length; i++){
+        response += formatBulkString(arr[i]);
+    }
+    return response;
+}
+
 function formatSimpleErrors() {
     return "-ERR unknown command\r\n";
 }
@@ -19,5 +27,6 @@ function formatSimpleErrors() {
 module.exports = {
     formatSimpleString,
     formatBulkString,
+    formatArrays,
     formatSimpleErrors  
 };
