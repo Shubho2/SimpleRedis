@@ -1,4 +1,4 @@
-const server = require('./server');
+const server = require('../srv/server');
 
 // Default configuration
 const config = {

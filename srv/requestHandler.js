@@ -1,8 +1,6 @@
-const net = require("net");
-const formatter = require("./formatter");
+const formatter = require('../helperFunctions/formatter');
 
 let map = new Map();
-let serverConfig = {};
 
 function _parseCommandAndArguments(data) {
     let args = data.toString().toLowerCase().split("\r\n");
@@ -24,7 +22,7 @@ function _scheduleRemovalOfKeyFromMap(key, timeout) {
     }, timeout);
 }
 
-function _handleRequest(data) {
+function handleRequest(data, serverConfig) {
     let [command, ...args] = _parseCommandAndArguments(data);
     console.log("command:" + command + " args:" + args);
     let response = "";
@@ -63,6 +61,15 @@ function _handleRequest(data) {
                 }
             }
             break;
+        case "replconf":
+            console.log("Replconf command");
+            serverConfig.connected_slaves = serverConfig.connected_slaves + 1;
+            response = formatter.formatSimpleString("OK");
+            break;
+        case "psync":
+            console.log("Psync command");
+            response = formatter.formatSimpleString(`FULLRESYNC ${serverConfig.master_replid} ${serverConfig.master_repl_offset}`);
+            break;
         default:
             console.log("Command not found");
             response = formatter.formatSimpleErrors();
@@ -70,48 +77,4 @@ function _handleRequest(data) {
     return response;
 }
 
-function createServer(port, host) {
-    const server = net.createServer((connection) => {
-        connection.on("data", (data) => {
-            let response = _handleRequest(data);
-            connection.write(response);
-        });
-        console.log("Client connected");
-    });
-
-    server.listen(port, host, () => {
-        console.log("Server started on port " + port);
-    });
-}
-
-function _initMaster() {
-    createServer(serverConfig.port, serverConfig.host);
-}
-
-function _initSlave() {
-    let socket = new net.Socket();
-    let hostId = serverConfig.master_host === "localhost" ? "127.0.0.1" : host;
-    socket.connect(serverConfig.master_port, hostId);
-
-    socket.on("connect", () => {
-        console.log("Connected to master");
-        let request = formatter.formatArrays(["ping"]);
-        socket.write(request);
-    });
-
-    socket.on("data", (data) => {
-        console.log("received from master: " + data.toString());
-        createServer(serverConfig.port, serverConfig.host);
-    });
-}
-
-function init(config) {
-    serverConfig = config;
-    if(serverConfig.role === "master") {
-        _initMaster();
-    } else {
-        _initSlave();
-    }
-}
-
-module.exports = { init };
+module.exports = { handleRequest };
