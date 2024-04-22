@@ -29,6 +29,8 @@ function _handshakeWithMaster(serverConfig) {
         socket.write(formatter.formatArrays(["ping"]), "utf8");
     });
 
+    // This is a flag to ensure that we only send the capabilities once
+    // TODO: This is a hacky way to do this. Find a better way. Can we use a state machine? CSP?
     let capabilitiesDidSend = false;
 
     socket.on("data", (data) => {
