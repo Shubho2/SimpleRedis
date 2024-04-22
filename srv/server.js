@@ -5,6 +5,10 @@ const util = require("util");
 const formatter = require("../helperFunctions/formatter");
 const requestHandler = require("./requestHandler");
 
+/** 
+ * This function is used to create a server based on the server configuration object.
+ * @param {Object} serverConfig - The server configuration object
+*/
 function _createServer(serverConfig) {
     const server = net.createServer((socket) => {
         socket.on("data", (data) => {
@@ -19,6 +23,10 @@ function _createServer(serverConfig) {
     });
 }
 
+/**
+ * This function is used to handshake with the master server.
+ * @param {Object} serverConfig - The server configuration object
+ */
 function _handshakeWithMaster(serverConfig) {
     let socket = new net.Socket();
     let hostId = serverConfig.master_host === "localhost" ? "127.0.0.1" : serverConfig.master_host;
@@ -65,6 +73,11 @@ function _initSlave(serverConfig) {
     _handshakeWithMaster(serverConfig);
 }
 
+
+/**
+ * This function is used to initialize the server based on the server configuration object.
+ * @param {Object} serverConfig - The server configuration object
+ */
 function init(serverConfig) {
     if(serverConfig.role === "master") {
         _initMaster(serverConfig);
