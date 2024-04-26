@@ -12,8 +12,7 @@ const requestHandler = require("./requestHandler");
 function _createServer(serverConfig) {
     const server = net.createServer((socket) => {
         socket.on("data", (data) => {
-            let response = requestHandler.handleRequest(data, serverConfig);
-            socket.write(response);
+            requestHandler.handleRequest(socket, data, serverConfig);
         });
         console.log("Client connected");
     });
