@@ -27,9 +27,7 @@ function _createServer(serverConfig) {
  * @param {Object} serverConfig - The server configuration object
  */
 function _handshakeWithMaster(serverConfig) {
-    let socket = new net.Socket();
-    let hostId = serverConfig.master_host === "localhost" ? "127.0.0.1" : serverConfig.master_host;
-    socket.connect(serverConfig.master_port, hostId);
+    let socket = net.createConnection(serverConfig.master_port, serverConfig.master_host);
 
     socket.on("connect", () => {
         console.log("Connected to master");
@@ -59,6 +57,8 @@ function _handshakeWithMaster(serverConfig) {
                 console.log("Handshake successful");
                 socket.write(formatter.formatArrays(["PSYNC", "?", "-1"]), "utf8");
             }
+        } else if(data.toString().startsWith('*')) {
+            requestHandler.handleRequest(socket, data, serverConfig);
         }
     });
 }

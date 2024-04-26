@@ -1,3 +1,4 @@
+const net = require('net');
 const formatter = require('../helperFunctions/formatter');
 
 let map = new Map();
@@ -20,6 +21,13 @@ function _scheduleRemovalOfKeyFromMap(key, timeout) {
             map.delete(key);
         }
     }, timeout);
+}
+
+function _broadcastToSlaves(serverConfig, data) {
+    serverConfig.connections.forEach((socket) => {
+        socket.write(data);
+        console.log('data sent to slave');
+    });
 }
 
 function bufferRDBFile() {
@@ -51,6 +59,9 @@ function handleRequest(socket, data, serverConfig) {
                 _scheduleRemovalOfKeyFromMap(args[0], args[3]);
             }
             response = formatter.formatSimpleString("OK");
+            if(serverConfig.role === "master") {
+                _broadcastToSlaves(serverConfig, data);
+            }
             socket.write(response);
             break;
         case "get":
@@ -75,7 +86,11 @@ function handleRequest(socket, data, serverConfig) {
             break;
         case "replconf":
             console.log("Replconf command");
-            serverConfig.connected_slaves = serverConfig.connected_slaves + 1;
+            if(args[0] === "listening-port") {
+                // saving the socket object for future use, instead of the port. 
+                serverConfig.connected_slaves.push(args[1]);
+                serverConfig.connections.push(socket);
+            }
             response = formatter.formatSimpleString("OK");
             socket.write(response);
             break;
@@ -87,10 +102,6 @@ function handleRequest(socket, data, serverConfig) {
             console.log(`RDB file sent: ${response}`);
             socket.write(response);
             break;
-        default:
-            console.log("Command not found");
-            response = formatter.formatSimpleErrors();
-            socket.write(response);
     }
 }
 
