@@ -33,11 +33,16 @@ function handleRequest(socket, data, serverConfig) {
             if(args[2] === "px") {
                 scheduleRemovalOfKeyFromMap(args[0], args[3]);
             }
-            response = formatter.formatSimpleString("OK");
+
             if(serverConfig.role === "master") {
                 broadcastToSlaves(serverConfig, data);
             }
-            socket.write(response);
+
+            // If the client is not the master, then send the response back to the client
+            if(socket.remotePort !== serverConfig.master_port) {
+                response = formatter.formatSimpleString("OK");
+                socket.write(response);
+            }
             break;
         case "get":
             console.log("Get command");
@@ -75,6 +80,11 @@ function handleRequest(socket, data, serverConfig) {
             socket.write(response);
             response = bufferRDBFile();
             console.log(`RDB file sent: ${response}`);
+            socket.write(response);
+            break;
+        default:
+            console.log("Unknown command");
+            response = formatter.formatSimpleErrors();
             socket.write(response);
             break;
     }

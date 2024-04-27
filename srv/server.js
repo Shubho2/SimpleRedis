@@ -57,7 +57,20 @@ function _handshakeWithMaster(serverConfig) {
                 socket.write(formatter.formatArrays(["PSYNC", "?", "-1"]), "utf8");
             }
         } else if(data.toString().startsWith('*')) {
-            requestHandler.handleRequest(socket, data, serverConfig);
+            console.log("Handling propagated data");
+            let queries = data.toString();
+            while(queries.length > 0) {
+                let index = queries.indexOf('*', 1);
+                let query;
+                if(index == -1) {
+                    query = queries;
+                    queries = '';
+                } else {
+                    query = queries.substring(0, index);
+                    queries = queries.substring(index);
+                }
+                requestHandler.handleRequest(socket, query, serverConfig);
+            }
         }
     });
 }
