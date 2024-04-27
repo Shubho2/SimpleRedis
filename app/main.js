@@ -1,3 +1,5 @@
+'use strict';
+
 const server = require('../srv/server');
 
 // Default configuration

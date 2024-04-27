@@ -1,44 +1,19 @@
 const net = require('net');
 const formatter = require('../helperFunctions/formatter');
+const { map } = require('../inMemoryCache/cache');
+const { parseCommandAndArguments,
+    scheduleRemovalOfKeyFromMap,
+    broadcastToSlaves,
+    bufferRDBFile } = require('../helperFunctions/util');
 
-let map = new Map();
-
-function _parseCommandAndArguments(data) {
-    let args = data.toString().toLowerCase().split("\r\n");
-    args.shift();
-    let result = [];
-    for(let i = 0; i < args.length; i++){
-        if(i%2 == 1) {
-            result.push(args[i])
-        }
-    }
-    return result;
-}
-
-function _scheduleRemovalOfKeyFromMap(key, timeout) {
-    setTimeout(() => {
-        if(map.has(key)) {
-            map.delete(key);
-        }
-    }, timeout);
-}
-
-function _broadcastToSlaves(serverConfig, data) {
-    serverConfig.connections.forEach((socket) => {
-        socket.write(data);
-        console.log('data sent to slave');
-    });
-}
-
-function bufferRDBFile() {
-    const empty_rdb_base64 = "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==";
-    const rdbBuffer = Buffer.from(empty_rdb_base64, "base64");
-    const rdbHead = Buffer.from(`$${rdbBuffer.length}\r\n`);
-    return Buffer.concat([rdbHead,rdbBuffer]);
-}
-
+/**
+ * This function is used to handle the request from the client
+ * @param {net.Socket} socket - The socket object 
+ * @param {Buffer} data - The data received from the client 
+ * @param {Object} serverConfig - The server configuration object 
+ */
 function handleRequest(socket, data, serverConfig) {
-    let [command, ...args] = _parseCommandAndArguments(data);
+    let [command, ...args] = parseCommandAndArguments(data);
     console.log("command:" + command + " args:" + args);
     let response = "";
     switch(command){
@@ -56,11 +31,11 @@ function handleRequest(socket, data, serverConfig) {
             console.log("Set command");
             map.set(args[0], args[1]);
             if(args[2] === "px") {
-                _scheduleRemovalOfKeyFromMap(args[0], args[3]);
+                scheduleRemovalOfKeyFromMap(args[0], args[3]);
             }
             response = formatter.formatSimpleString("OK");
             if(serverConfig.role === "master") {
-                _broadcastToSlaves(serverConfig, data);
+                broadcastToSlaves(serverConfig, data);
             }
             socket.write(response);
             break;

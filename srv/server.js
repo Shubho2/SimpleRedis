@@ -1,7 +1,6 @@
 'use strict'
 
 const net = require("net");
-const util = require("util");
 const formatter = require("../helperFunctions/formatter");
 const requestHandler = require("./requestHandler");
 
