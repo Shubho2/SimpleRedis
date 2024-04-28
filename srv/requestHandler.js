@@ -71,7 +71,12 @@ function handleRequest(socket, data, serverConfig) {
                 serverConfig.connected_slaves.push(args[1]);
                 serverConfig.connections.push(socket);
             }
-            response = formatter.formatSimpleString("OK");
+
+            if(args[0] === "getack") {
+                response = formatter.formatArrays(['REPLCONF', 'ACK', '0']);
+            } else {
+                response = formatter.formatSimpleString("OK");
+            }
             socket.write(response);
             break;
         case "psync":

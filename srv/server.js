@@ -56,9 +56,10 @@ function _handshakeWithMaster(serverConfig) {
                 console.log("Handshake successful");
                 socket.write(formatter.formatArrays(["PSYNC", "?", "-1"]), "utf8");
             }
-        } else if(data.toString().startsWith('*')) {
-            console.log("Handling propagated data");
+        } else if(data.toString().includes('*')) {
+            console.log("Handling propagated data " + data.toString());
             let queries = data.toString();
+            queries = queries.substring(queries.indexOf('*'));
             while(queries.length > 0) {
                 let index = queries.indexOf('*', 1);
                 let query;
@@ -69,6 +70,7 @@ function _handshakeWithMaster(serverConfig) {
                     query = queries.substring(0, index);
                     queries = queries.substring(index);
                 }
+                console.log("Handling query: " + query);
                 requestHandler.handleRequest(socket, query, serverConfig);
             }
         }
