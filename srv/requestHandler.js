@@ -1,6 +1,6 @@
 const net = require('net');
 const formatter = require('../helperFunctions/formatter');
-const { map } = require('../inMemoryCache/cache');
+let { map } = require('../inMemoryCache/cache');
 const { parseCommandAndArguments,
     scheduleRemovalOfKeyFromMap,
     broadcastToSlaves,
@@ -24,8 +24,11 @@ function handleRequest(socket, data, serverConfig) {
             break;
         case "ping":
             console.log("Pinging");
-            response = formatter.formatSimpleString("PONG");
-            socket.write(response);
+            // If the client is not the master, then send the response back to the client
+            if(socket.remotePort !== serverConfig.master_port) {
+                response = formatter.formatSimpleString("PONG");
+                socket.write(response);
+            }
             break;
         case "set":
             console.log("Set command");
@@ -73,7 +76,7 @@ function handleRequest(socket, data, serverConfig) {
             }
 
             if(args[0] === "getack") {
-                response = formatter.formatArrays(['REPLCONF', 'ACK', '0']);
+                response = formatter.formatArrays(['REPLCONF', 'ACK', serverConfig.bytes_read_from_master.toString()]);
             } else {
                 response = formatter.formatSimpleString("OK");
             }
@@ -89,8 +92,10 @@ function handleRequest(socket, data, serverConfig) {
             break;
         default:
             console.log("Unknown command");
-            response = formatter.formatSimpleErrors();
-            socket.write(response);
+            if(socket.remotePort !== serverConfig.master_port) {
+                response = formatter.formatSimpleErrors();
+                socket.write(response);
+            }
             break;
     }
 }

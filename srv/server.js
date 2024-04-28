@@ -59,7 +59,10 @@ function _handshakeWithMaster(serverConfig) {
         } else if(data.toString().includes('*')) {
             console.log("Handling propagated data " + data.toString());
             let queries = data.toString();
+
+            // Trimming the RDB file content from the data
             queries = queries.substring(queries.indexOf('*'));
+
             while(queries.length > 0) {
                 let index = queries.indexOf('*', 1);
                 let query;
@@ -72,7 +75,12 @@ function _handshakeWithMaster(serverConfig) {
                 }
                 console.log("Handling query: " + query);
                 requestHandler.handleRequest(socket, query, serverConfig);
+
+                // Incrementing the bytes read from the master after handling the query
+                serverConfig.bytes_read_from_master += query.length;
+                console.log('bytes_read: ' + serverConfig.bytes_read_from_master);
             }
+
         }
     });
 }

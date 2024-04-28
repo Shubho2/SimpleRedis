@@ -23,6 +23,7 @@ if(args.includes('--replicaof')) {
     config.role = "slave";
     config.master_host = args[args.indexOf('--replicaof') + 1] === 'localhost' ? '127.0.0.1' : args[args.indexOf('--replicaof') + 1];
     config.master_port = parseInt(args[args.indexOf('--replicaof') + 2]);
+    config.bytes_read_from_master = 0;
     delete config.connections;
     delete config.connected_slaves;
     delete config.master_replid;
