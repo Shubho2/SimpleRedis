@@ -19,6 +19,10 @@ function formatArrays(arr) {
     return response;
 }
 
+function formatInteger(integer) {
+    return `:${integer}\r\n`;
+}
+
 function formatSimpleErrors() {
     return "-ERR unknown command\r\n";
 }
@@ -28,5 +32,6 @@ module.exports = {
     formatSimpleString,
     formatBulkString,
     formatArrays,
-    formatSimpleErrors  
+    formatSimpleErrors,
+    formatInteger
 };

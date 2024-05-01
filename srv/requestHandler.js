@@ -90,6 +90,11 @@ function handleRequest(socket, data, serverConfig) {
             console.log(`RDB file sent: ${response}`);
             socket.write(response);
             break;
+        case "wait":
+            console.log("wait command");
+            response = formatter.formatInteger(serverConfig.connected_slaves.length);
+            socket.write(response);
+            break;
         default:
             console.log("Unknown command");
             if(socket.remotePort !== serverConfig.master_port) {
