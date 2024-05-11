@@ -2,7 +2,7 @@
 
 const net = require("net");
 const formatter = require("../helperFunctions/formatter");
-const requestHandler = require("./requestHandler");
+const queryHandler = require("./queryHandler");
 
 /** 
  * This function is used to create a server based on the server configuration object.
@@ -11,7 +11,7 @@ const requestHandler = require("./requestHandler");
 function _createServer(serverConfig) {
     const server = net.createServer((socket) => {
         socket.on("data", (data) => {
-            requestHandler.handleRequest(socket, data, serverConfig);
+            queryHandler.handleQuery(socket, data, serverConfig);
         });
         console.log("Client connected");
     });
@@ -74,7 +74,7 @@ function _handshakeWithMaster(serverConfig) {
                     queries = queries.substring(index);
                 }
                 console.log("Handling query: " + query);
-                requestHandler.handleRequest(socket, query, serverConfig);
+                queryHandler.handleQuery(socket, query, serverConfig);
 
                 // Incrementing the bytes read from the master after handling the query
                 serverConfig.bytes_read_from_master += query.length;

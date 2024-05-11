@@ -1,10 +1,12 @@
 const net = require('net');
 const formatter = require('../helperFunctions/formatter');
 let { map } = require('../inMemoryCache/cache');
-const { parseCommandAndArguments,
+const { 
+    parseCommandAndArguments,
     scheduleRemovalOfKeyFromMap,
     broadcastToSlaves,
-    bufferRDBFile } = require('../helperFunctions/util');
+    bufferRDBFile 
+} = require('../helperFunctions/util');
 
 /**
  * This function is used to handle the request from the client
@@ -12,7 +14,7 @@ const { parseCommandAndArguments,
  * @param {Buffer} data - The data received from the client 
  * @param {Object} serverConfig - The server configuration object 
  */
-function handleRequest(socket, data, serverConfig) {
+function handleQuery(socket, data, serverConfig) {
     let [command, ...args] = parseCommandAndArguments(data);
     console.log("command:" + command + " args:" + args);
     let response = "";
@@ -105,4 +107,4 @@ function handleRequest(socket, data, serverConfig) {
     }
 }
 
-module.exports = { handleRequest };
+module.exports = { handleQuery };
