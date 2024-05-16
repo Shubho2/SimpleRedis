@@ -22,8 +22,9 @@ if(args.includes('--port')) {
 
 if(args.includes('--replicaof')) {
     config.role = "slave";
-    config.master_host = args[args.indexOf('--replicaof') + 1] === 'localhost' ? '127.0.0.1' : args[args.indexOf('--replicaof') + 1];
-    config.master_port = parseInt(args[args.indexOf('--replicaof') + 2]);
+    let master_config = args[args.indexOf('--replicaof') + 1].split(' ');
+    config.master_host = master_config[0] === 'localhost' ? '127.0.0.1' : master_config[0];
+    config.master_port = parseInt(master_config[1]);
     config.bytes_read_from_master = 0;
     delete config.propagated_commands;
     delete config.connections;
