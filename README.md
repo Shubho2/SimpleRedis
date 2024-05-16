@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 # SimpleRedis
-Implementation of Basic Redis Protocol. This project follows the codecrafter's project idea :
-https://app.codecrafters.io/courses/redis/introduction
-=======
+
 [![progress-banner](https://backend.codecrafters.io/progress/redis/f00c66d0-7944-490f-8200-a685c9d5e138)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
 
 This is a starting point for JavaScript solutions to the
@@ -37,4 +34,3 @@ Note: This section is for stages 2 and beyond.
    in `app/main.js`.
 1. Commit your changes and run `git push origin master` to submit your solution
    to CodeCrafters. Test output will be streamed to your terminal.
->>>>>>> a0a44a8 (init [skip ci])

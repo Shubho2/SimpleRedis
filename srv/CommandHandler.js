@@ -17,6 +17,10 @@ module.exports = class CommandHandler {
         this.#ackRecieved = 0;
     }
 
+    get configuration() {
+        return this.#configuration;
+    }
+
     echo(socket, args) {
         console.log("Echoing");
         // If the client is not the master, then send the response back to the client
@@ -102,11 +106,13 @@ module.exports = class CommandHandler {
     wait(socket, args) {
         console.log("wait command");
         let response;
-        if (this.#configuration.propogated_commands === 0) {
+        if (this.#configuration.propagated_commands === 0) {
+            console.log("No propagated commands. So sending the number of connected replicas.");
             this.#writeToSocket(socket, Encoder.encodeInteger(this.#configuration.connected_replicas.length));
             this.#ackRecieved = 0;
         } else {
             this.#configuration.connections.forEach((socket) => {
+                console.log("Sending REPLCONF GETACK *");
                 socket.write(Encoder.encodeArray(['REPLCONF', 'GETACK', '*']));
                 // Doesn't need register an event listener for the data event, as the data event is already being listen to
                 // while server is created. The response is handled in replconf() method.
@@ -116,7 +122,7 @@ module.exports = class CommandHandler {
                 this.#writeToSocket(socket, Encoder.encodeInteger(this.#ackRecieved));
                 this.#ackRecieved = 0;
             }, args[1]);
-            this.#configuration.propogated_commands = 0;
+            this.#configuration.propagated_commands = 0;
         }
     }
 
