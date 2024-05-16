@@ -17,10 +17,6 @@ module.exports = class CommandHandler {
         this.#ackRecieved = 0;
     }
 
-    get configuration() {
-        return this.#configuration;
-    }
-
     echo(socket, args) {
         console.log("Echoing");
         // If the client is not the master, then send the response back to the client
@@ -48,7 +44,7 @@ module.exports = class CommandHandler {
     }
 
     get(socket, args) {
-        console.log("Fetching value from cache");
+        console.log("Fetching value against the key from cache");
         let val = this.#cache.get(args[0]);
         this.#writeToSocket(socket, Encoder.encodeBulkString(val));
     }
