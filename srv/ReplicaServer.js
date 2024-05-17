@@ -7,11 +7,20 @@ module.exports = class ReplicaServer {
   
   // Replica configuration
   #configuration;
+
+  // Command handler
   #commandHandler;
+
+  // Server info
+  #server_info;
 
   constructor(configuration) {
     this.#configuration = configuration;
-    this.#commandHandler= new CommandHandler(configuration);
+    this.#server_info = {
+      bytes_read_from_master: 0
+    };
+
+    this.#commandHandler= new CommandHandler(configuration, this.#server_info);
   }
 
   /** 
@@ -21,7 +30,8 @@ module.exports = class ReplicaServer {
       const server = net.createServer((socket) => {
           socket.on("data", (data) => {
             console.log("Data came to " + this.#configuration.role + " server");
-            this.#handleCommand(socket, data);
+            let [command, ...args] = parseCommandAndArguments(data.toString());
+            this.#handleCommand(socket, command, args);
           });
           console.log(this.#configuration.role + " server is created");
       });
@@ -40,11 +50,11 @@ module.exports = class ReplicaServer {
   /**
    * This function is used to handle the request from the client
    * @param {net.Socket} socket - The socket object
-   * @param {Buffer} data - The data received from the client
+   * @param {Buffer} command - The command received from the client
+   * @param {[String]} args - The arguments of the command received from the client
    */
-  #handleCommand(socket, data) {
-    let [command, ...args] = parseCommandAndArguments(data);
-    console.log("command:" + command + " args:" + args);
+  #handleCommand(socket, command, args) {
+    console.log("Handling command:" + command + " args:" + args);
     switch (command) {
       case "echo":
         this.#commandHandler.echo(socket, args);
@@ -74,14 +84,14 @@ module.exports = class ReplicaServer {
    * This function is used to handshake with the master server.
    */
   #handshakeWithMaster() {
-    let socket = net.createConnection(
+    let socket = net.createConnection (
       this.#configuration.master_port,
       this.#configuration.master_host
     );
 
     socket.on("connect", () => {
       console.log("Connected to master");
-      socket.write(Encoder.encodeArray(["ping"]), "utf8");
+      this.#writeEncodedArrayToSocket(socket, ['PING']);
     });
 
     // This is a flag to ensure that we only send the capabilities once
@@ -89,60 +99,78 @@ module.exports = class ReplicaServer {
     let capabilitiesDidSend = false;
 
     socket.on("data", (data) => {
-      console.log("received from master: " + data.toString());
+      let response = data.toString();
+      console.log("received from master: " + response);
 
-      if (data.toString() === "+PONG\r\n") {
-        socket.write(
-          Encoder.encodeArray([
-            "REPLCONF",
-            "listening-port",
-            this.#configuration.port,
-          ]),
-          "utf8"
-        );
-      } else if (data.toString() === "+OK\r\n") {
+      if (response === "+PONG\r\n") {
+
+        this.#writeEncodedArrayToSocket(socket, ["REPLCONF", "listening-port", this.#configuration.port]);
+
+      } else if (response === "+OK\r\n") {
+
         if (!capabilitiesDidSend) {
-          socket.write(
-            Encoder.encodeArray(["REPLCONF", "capa", "psync2"]),
-            "utf8",
-            (err) => {
-              if (err) {
-                console.log("Error writing to master");
-              } else {
-                console.log("Sent capabilities to master");
-                capabilitiesDidSend = true;
-              }
-            }
-          );
+          this.#writeEncodedArrayToSocket(socket, ["REPLCONF", "capa", "psync2"]);
+          console.log("Sent capabilities to master");
+          capabilitiesDidSend = true;
         } else {
           console.log("Handshake successful");
-          socket.write(Encoder.encodeArray(["PSYNC", "?", "-1"]), "utf8");
+          this.#writeEncodedArrayToSocket(socket, ["PSYNC", "?", "-1"]);
         }
-      } else if (data.toString().includes("*")) {
-        console.log("Handling propagated data " + data.toString());
-        let commands = data.toString();
 
-        // Trimming the RDB file content from the data
+      } else if (response.includes("*")) {
+        console.log("Handling propagated data " + response);
+        let commands = response;
+
+        // Trimming the RDB file content from the data if it is present
         commands = commands.substring(commands.indexOf("*"));
 
         while (commands.length > 0) {
-          let index = commands.indexOf("*", 1);
-          let command;
-          if (index == -1) {
-            command = commands;
-            commands = "";
-          } else {
-            command = commands.substring(0, index);
-            commands = commands.substring(index);
+          let commandAndArgs, bytes_processed = 0;
+          [commands, commandAndArgs] = this.#extractCommandAndArguments(commands);
+          bytes_processed += commandAndArgs.length;
+          let [command, ...args] = parseCommandAndArguments(commandAndArgs);
+          
+          if(args[0] === 'getack') {
+            [commands, commandAndArgs] = this.#extractCommandAndArguments(commands);
+            bytes_processed += commandAndArgs.length;
+            args[1] = commandAndArgs[0];
           }
-          console.log("Handling command: " + command);
-          this.#handleCommand(socket, command);
+          
+          this.#handleCommand(socket, command, args);
 
           // Incrementing the bytes read from the master after handling the query
-          this.#configuration.bytes_read_from_master += command.length;
-          console.log("bytes_read: " + this.#configuration.bytes_read_from_master);
+          this.#server_info.bytes_read_from_master += bytes_processed;
+          console.log("bytes_read: " + this.#server_info.bytes_read_from_master);
         }
       }
     });
+  }
+
+
+  #extractCommandAndArguments(commands) {
+
+      let index = commands.indexOf("*", 1);
+      let commandAndArgs;
+      if (index == -1) {
+        commandAndArgs = commands;
+        commands = "";
+      } else {
+        commandAndArgs = commands.substring(0, index);
+        commands = commands.substring(index);
+      }
+
+      return [commands, commandAndArgs];
+  }
+
+
+
+  /**
+   * This function is used to write the encoded array to the socket
+   * @param {net.Socket} socket - The socket object
+   * @param {[String]} arr - The array to be encoded and written to the socket
+   */
+  #writeEncodedArrayToSocket(socket, arr) {
+      let response = Encoder.encodeArray(arr);
+      socket.write(response, "utf8");
   }
 };

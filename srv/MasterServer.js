@@ -6,12 +6,22 @@ const CommandHandler = require("./CommandHandler");
 module.exports = class MasterServer {
     
     // Master configuration
-    #configuration
-    #commandHandler
+    #configuration;
+
+    // Command handler
+    #commandHandler;
+
+    // Server info
+    #server_info;
 
     constructor(configuration) {
         this.#configuration = configuration;
-        this.#commandHandler = new CommandHandler(configuration);
+        this.#server_info = {
+            connections: {},
+            propagated_commands: 0
+        };
+
+        this.#commandHandler = new CommandHandler(this.#configuration, this.#server_info);
     }
 
     startServer() {
@@ -38,7 +48,7 @@ module.exports = class MasterServer {
      * @param {Buffer} data - The data received from the client 
      */
     #handleCommand(socket, data) {
-        let [command, ...args] = parseCommandAndArguments(data);
+        let [command, ...args] = parseCommandAndArguments(data.toString());
         console.log("command:" + command + " args:" + args);
         switch(command){
             case "echo":
@@ -77,8 +87,8 @@ module.exports = class MasterServer {
      * @param {Buffer} data - The data to be sent to the slaves
      */
     #broadcastToReplicas(data) {
-        this.#configuration.propagated_commands++;
-        this.#configuration.connections.forEach((socket) => {
+        this.#server_info.propagated_commands++;
+        Object.values(this.#server_info.connections).forEach((socket) => {
             socket.write(data);
         });
         console.log('data sent to replicas');

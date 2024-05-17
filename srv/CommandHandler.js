@@ -8,11 +8,13 @@ var Cache = require("../db/Cache");
 module.exports = class CommandHandler {
 
     #configuration;
+    #serverInfo;
     #cache;
     #ackRecieved;
 
-    constructor(configuration) {
+    constructor(configuration, serverInfo) {
         this.#configuration = configuration;
+        this.#serverInfo = serverInfo;
         this.#cache = new Cache();
         this.#ackRecieved = 0;
     }
@@ -71,16 +73,15 @@ module.exports = class CommandHandler {
         let response;
         if(args[0] === "listening-port") {
             // Command recieved by the master from replica
-            // saving the socket object for future use, instead of the port. 
-            this.#configuration.connected_replicas.push(args[1]);
-            this.#configuration.connections.push(socket);
+            // saving the {port: socket} object for future use.
+            this.#serverInfo.connections[args[1]] = socket;
             response = Encoder.encodeSimpleString("OK");
         } else if(args[0] == 'capa') {
             // Command recieved by the master from replica
             response = Encoder.encodeSimpleString("OK");
         } else if(args[0] === "getack") {
             // Command recieved by the replica from master
-            response = Encoder.encodeArray(['REPLCONF', 'ACK', this.#configuration.bytes_read_from_master.toString()]);
+            response = Encoder.encodeArray(['REPLCONF', 'ACK', this.#serverInfo.bytes_read_from_master.toString()]);
         } else if (args[0] === "ack"){
             // Command recieved by the master from replica
             response = null;
@@ -102,23 +103,25 @@ module.exports = class CommandHandler {
     wait(socket, args) {
         console.log("wait command");
         let response;
-        if (this.#configuration.propagated_commands === 0) {
+        if (this.#serverInfo.propagated_commands === 0) {
             console.log("No propagated commands. So sending the number of connected replicas.");
-            this.#writeToSocket(socket, Encoder.encodeInteger(this.#configuration.connected_replicas.length));
+            this.#writeToSocket(socket, Encoder.encodeInteger(Object.keys(this.#serverInfo.connections).length));
             this.#ackRecieved = 0;
         } else {
-            this.#configuration.connections.forEach((socket) => {
+            Object.values(this.#serverInfo.connections).forEach((socket) => {
                 console.log("Sending REPLCONF GETACK *");
-                socket.write(Encoder.encodeArray(['REPLCONF', 'GETACK', '*']));
-                // Doesn't need register an event listener for the data event, as the data event is already being listen to
-                // while server is created. The response is handled in replconf() method.
+                this.#writeToSocket(socket, Encoder.encodeArray(['REPLCONF', 'GETACK', '*']));
+                /**
+                 * Doesn't need to register an event listener for the data event, as the data event is already being listen to
+                 * while server is created. The response is handled in replconf() method.
+                 */
             });
 
             setTimeout( () => {
                 this.#writeToSocket(socket, Encoder.encodeInteger(this.#ackRecieved));
                 this.#ackRecieved = 0;
             }, args[1]);
-            this.#configuration.propagated_commands = 0;
+            this.#serverInfo.propagated_commands = 0;
         }
     }
 

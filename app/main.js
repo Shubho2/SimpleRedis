@@ -7,9 +7,6 @@ const config = {
     host: "127.0.0.1",
     port: 6379,
     role: "master",
-    propagated_commands: 0,
-    connections: [],
-    connected_replicas: [],
     master_replid: "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb",
     master_repl_offset: 0
 }
@@ -25,10 +22,6 @@ if(args.includes('--replicaof')) {
     let master_config = args[args.indexOf('--replicaof') + 1].split(' ');
     config.master_host = master_config[0] === 'localhost' ? '127.0.0.1' : master_config[0];
     config.master_port = parseInt(master_config[1]);
-    config.bytes_read_from_master = 0;
-    delete config.propagated_commands;
-    delete config.connections;
-    delete config.connected_replicas;
     delete config.master_replid;
     delete config.master_repl_offset;
 }
