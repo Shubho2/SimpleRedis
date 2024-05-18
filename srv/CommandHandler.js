@@ -125,6 +125,19 @@ module.exports = class CommandHandler {
         }
     }
 
+    config(socket, args) {
+        let response;
+        if(args[0] == 'get') {
+            console.log("config get command");
+            if(args[1] === 'dir') {
+                response = Encoder.encodeArray(['dir', this.#configuration.dir]);
+            } else if(args[1] === 'dbfilename') {
+                response = Encoder.encodeArray(['dbfilename', this.#configuration.dbfilename]);
+            }
+        }
+        this.#writeToSocket(socket, response);
+    }
+
     defaultHandler(socket) {
         console.log("Unknown command");
         if(socket.remotePort !== this.#configuration.master_port) {

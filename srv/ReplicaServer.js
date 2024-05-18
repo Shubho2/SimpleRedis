@@ -148,7 +148,6 @@ module.exports = class ReplicaServer {
 
 
   #extractCommandAndArguments(commands) {
-
       let index = commands.indexOf("*", 1);
       let commandAndArgs;
       if (index == -1) {

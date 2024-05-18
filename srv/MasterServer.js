@@ -76,6 +76,9 @@ module.exports = class MasterServer {
             case "wait":
                 this.#commandHandler.wait(socket, args);
                 break;
+            case "config":
+                this.#commandHandler.config(socket, args);
+                break;
             default:
                 this.#commandHandler.defaultHandler(socket);
                 break;

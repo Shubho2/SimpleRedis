@@ -17,6 +17,14 @@ if(args.includes('--port')) {
     config.port = args[args.indexOf('--port') + 1];
 }
 
+if(args.includes('--dir')) {
+    config.dir = args[args.indexOf('--dir') + 1];
+}
+
+if(args.includes('--dbfilename')) {
+    config.dbfilename = args[args.indexOf('--dbfilename') + 1];
+}
+
 if(args.includes('--replicaof')) {
     config.role = "slave";
     let master_config = args[args.indexOf('--replicaof') + 1].split(' ');
